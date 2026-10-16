@@ -222,7 +222,9 @@ textarea {
     border: 1px solid var(--bd);
     border-radius: 8px;
     padding: 7px 9px;
-    resize: vertical
+    resize: none;
+    overflow-y: auto;
+    max-height: 40vh
 }
 
 .note {
@@ -232,7 +234,8 @@ textarea {
 }
 
 .chat {
-    max-height: 260px;
+    line-height: 1.7;
+    max-height: min(60vh, 480px);
     overflow-y: auto;
     display: flex;
     flex-direction: column;
@@ -240,6 +243,7 @@ textarea {
 }
 
 .b {
+    flex: none;
     padding: 8px 11px;
     border-radius: 12px;
     max-width: 88%;
@@ -334,13 +338,62 @@ html,
 }
 
 .hd {
+    position: relative;
     display: inline-flex;
     align-items: center;
-    gap: 2px
+    gap: 2px;
+    padding: 10px 6px 4px 2px;
+    border-radius: 8px;
+    transition: background .12s, outline-color .12s;
+    outline: 2px solid transparent;
+    outline-offset: 2px
 }
 
+.hd.drag {
+    opacity: .4
+}
+
+.hd.over {
+    background: var(--bg);
+    outline-color: var(--ac)
+}
+
+.hd .gr {
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    color: var(--mut);
+    padding: 6px 4px;
+    line-height: 1;
+    letter-spacing: -2px;
+    font-size: 14px
+}
+
+.hd .gr:active {
+    cursor: grabbing
+}
+
+/* ปุ่ม ✕ ติดมุมบนขวาของหัวข้อ */
 .hd .x {
-    padding: 0 4px
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 20px;
+    height: 20px;
+    min-height: 0;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    padding: 0;
+    font-size: 11px;
+    border-radius: 50%;
+    background: var(--card);
+    border: 1px solid var(--bd);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .25);
+    z-index: 1
 }
 
 td select {
@@ -371,4 +424,302 @@ td select.empty {
 
 td select {
     min-width: 120px
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 760px) {
+    .w {
+        padding: 8px
+    }
+
+    h1 {
+        font-size: 18px
+    }
+
+    h2 {
+        font-size: 15px
+    }
+
+    .card {
+        padding: 12px;
+        border-radius: 10px;
+        margin-bottom: 10px
+    }
+
+    table {
+        min-width: 720px
+    }
+
+    th,
+    td {
+        padding: 6px 4px;
+        font-size: 13px
+    }
+
+    .row {
+        gap: 6px
+    }
+
+    input,
+    select,
+    button,
+    textarea {
+        font-size: 14px;
+        padding: 7px 8px
+    }
+
+    button {
+        min-height: 36px
+    }
+
+    .chat {
+        max-height: min(50vh, 360px)
+    }
+
+}
+
+@media (max-width: 480px) {
+    .w {
+        padding: 6px
+    }
+
+    h1 {
+        font-size: 17px;
+        margin: 4px 0 10px
+    }
+
+    .card {
+        padding: 10px
+    }
+
+    .sum {
+        grid-template-columns: 1fr 1fr;
+        gap: 6px
+    }
+
+    .sum div:nth-child(3) {
+        grid-column: 1 / -1
+    }
+
+    .sum small {
+        font-size: 12px
+    }
+
+    .sum b {
+        font-size: 15px
+    }
+
+    table {
+        min-width: 620px
+    }
+
+    th,
+    td {
+        padding: 5px 3px;
+        font-size: 12px
+    }
+
+    .b {
+        max-width: 94%;
+        font-size: 13px
+    }
+
+    #ci {
+        min-width: 100%
+    }
+
+    .row>button,
+    .row>select#y,
+    .row>select#s {
+        flex: 1 1 auto
+    }
+
+    .pb {
+        padding: 14px;
+        width: min(320px, 100%)
+    }
+}
+
+@media (max-width: 360px) {
+    h1 {
+        font-size: 15px
+    }
+
+    .sum b {
+        font-size: 13px
+    }
+
+    .sum small {
+        font-size: 11px
+    }
+}
+
+@media (min-width: 1100px) {
+    .w {
+        max-width: 1040px
+    }
+}
+
+.b .pv {
+    margin: 6px 0;
+    font-size: 13px
+}
+
+.b .acts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px
+}
+
+.b .acts button {
+    min-height: 0;
+    padding: 5px 10px;
+    font-size: 13px
+}
+
+.b .csv {
+    font-family: ui-monospace, Menlo, Consolas, monospace;
+    font-size: 12px;
+    white-space: pre-wrap;
+    background: var(--card);
+    color: var(--tx);
+    border: 1px solid var(--bd);
+    border-radius: 8px;
+    padding: 6px 8px;
+    margin-top: 4px
+}
+
+/* ---------- ไอคอน SVG และไฮไลท์ ---------- */
+.ic {
+    width: 1em;
+    height: 1em;
+    vertical-align: -.14em;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    pointer-events: none;
+    flex: none
+}
+
+.x .ic {
+    width: 16px;
+    height: 16px
+}
+
+.hd .x .ic {
+    width: 10px;
+    height: 10px;
+    stroke-width: 2.6
+}
+
+.hd .gr .ic {
+    width: 16px;
+    height: 16px
+}
+
+.hl {
+    background: color-mix(in srgb, var(--ac) 20%, transparent);
+    color: inherit;
+    font-weight: 600;
+    padding: 0 4px;
+    border-radius: 5px
+}
+
+.hl.ok {
+    background: color-mix(in srgb, var(--in) 22%, transparent);
+    color: var(--in)
+}
+
+.hl.warn {
+    background: color-mix(in srgb, #f59e0b 28%, transparent);
+    color: inherit
+}
+
+.hl.err {
+    background: color-mix(in srgb, var(--out) 18%, transparent);
+    color: var(--out)
+}
+
+.nontifi .ic {
+    vertical-align: -.2em
+}
+
+/* ---------- ปุ่ม: hover / active / focus ---------- */
+button,
+select,
+.cal,
+.hd .gr {
+    transition: background-color .15s, border-color .15s, color .15s, box-shadow .15s, transform .08s
+}
+
+button:focus-visible,
+select:focus-visible {
+    outline: 2px solid var(--ac);
+    outline-offset: 2px
+}
+
+button:active {
+    transform: scale(.95)
+}
+
+button:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+    transform: none
+}
+
+button:not(.x):not(.p):active {
+    background: color-mix(in srgb, var(--ac) 22%, var(--card))
+}
+
+button.p:active {
+    background: color-mix(in srgb, var(--ac) 68%, #000);
+    border-color: color-mix(in srgb, var(--ac) 68%, #000)
+}
+
+.x:active {
+    background: color-mix(in srgb, var(--out) 26%, transparent)
+}
+
+.hd .x:active {
+    background: color-mix(in srgb, var(--out) 26%, var(--card))
+}
+
+.hd .gr:active {
+    color: var(--ac)
+}
+
+@media (hover: hover) {
+
+    button:not(.x):not(.p):hover {
+        border-color: var(--ac);
+        background: color-mix(in srgb, var(--ac) 10%, var(--card))
+    }
+
+    button.p:hover {
+        background: color-mix(in srgb, var(--ac) 85%, #000);
+        border-color: color-mix(in srgb, var(--ac) 85%, #000);
+        box-shadow: 0 2px 8px color-mix(in srgb, var(--ac) 35%, transparent)
+    }
+
+    .x:hover {
+        background: color-mix(in srgb, var(--out) 14%, transparent)
+    }
+
+    .hd .x:hover {
+        background: color-mix(in srgb, var(--out) 14%, var(--card));
+        border-color: var(--out)
+    }
+
+    select:hover {
+        border-color: var(--ac)
+    }
+
+    .cal:hover,
+    .hd .gr:hover {
+        color: var(--ac)
+    }
 }
