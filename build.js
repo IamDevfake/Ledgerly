@@ -2,8 +2,8 @@
 /**
  * build.js — สคริปต์ build โปรเจกต์ "บัญชีรายรับ-รายจ่าย"
  *
- * อ่านไฟล์ต้นฉบับจาก  src/index.html, src/style.css, src/app.js
- * แล้วสร้างไฟล์สำหรับใช้งานจริงลงที่ dist/index.html, dist/style.css, dist/app.js
+ * อ่านไฟล์ต้นฉบับจาก  src/index.html, src/style.css, src/app.js (หรือ index.html/index.css/index.js ในโฟลเดอร์หลัก)
+ * แล้วสร้างไฟล์สำหรับใช้งานจริงลงที่ public/ (ลบของเก่าทิ้งแล้วสร้างใหม่ทุกครั้ง)
  *
  *  - app.js   → เข้ารหัส/obfuscate ด้วย javascript-obfuscator (อ่านไม่รู้เรื่อง, ปิด console.log)
  *  - style.css→ minify (ตัดช่องว่าง/คอมเมนต์ออก)
@@ -14,7 +14,7 @@
  *   node build.js
  *
  * แก้ฟีเจอร์ใหม่ ๆ ที่โฟลเดอร์ src/ เท่านั้น แล้วรัน `node build.js` ใหม่ทุกครั้ง
- * ห้ามแก้ไฟล์ใน dist/ โดยตรง เพราะจะถูกเขียนทับเวลา build ใหม่ และโค้ดอ่านแทบไม่ได้แล้ว
+ * ห้ามแก้ไฟล์ใน public/ โดยตรง เพราะจะถูกเขียนทับเวลา build ใหม่ และโค้ดอ่านแทบไม่ได้แล้ว
  */
 
 const fs = require("fs");
@@ -23,8 +23,17 @@ const JavaScriptObfuscator = require("javascript-obfuscator");
 const CleanCSS = require("clean-css");
 const { minify: minifyHtml } = require("html-minifier-terser");
 
-const SRC = path.join(__dirname, "src");
-const DIST = path.join(__dirname, "dist");
+// โฟลเดอร์ผลลัพธ์ที่ใช้ deploy (Netlify จะเสิร์ฟโฟลเดอร์นี้) — ถูกลบแล้วสร้างใหม่ทุกครั้งที่ build
+const OUT = path.join(__dirname, "public");
+const DIST = OUT;
+
+// ไฟล์ต้นฉบับ: หาใน src/ ก่อน ถ้าไม่มีให้ใช้ไฟล์ในโฟลเดอร์หลัก (index.js / index.css / index.html)
+const SRC_DIRS = [path.join(__dirname, "src"), __dirname];
+const SRC_NAMES = {
+    "app.js": ["app.js", "index.js"],
+    "style.css": ["style.css", "index.css"],
+    "index.html": ["index.html"],
+};
 
 // ---------- ตั้งค่าการเข้ารหัส JS ----------
 // ปิด debugProtection / selfDefending ไว้ก่อน เพราะทดสอบแล้วพบว่าทำให้หน้าเว็บค้าง
@@ -54,10 +63,27 @@ function log(msg) {
     console.log("[build] " + msg);
 }
 
+function findSrc(name) {
+    for (const dir of SRC_DIRS) {
+        for (const n of SRC_NAMES[name] || [name]) {
+            const p = path.join(dir, n);
+            if (fs.existsSync(p)) return p;
+        }
+    }
+    return null;
+}
+
 function readSrc(name) {
-    const p = path.join(SRC, name);
-    if (!fs.existsSync(p)) throw new Error(`ไม่พบไฟล์ต้นฉบับ: ${p}`);
+    const p = findSrc(name);
+    if (!p) throw new Error(`ไม่พบไฟล์ต้นฉบับ: ${name} (หาใน src/ และโฟลเดอร์หลักแล้ว)`);
+    log(`อ่าน ${path.relative(__dirname, p)}`);
     return fs.readFileSync(p, "utf8");
+}
+
+function cleanOut() {
+    fs.rmSync(OUT, { recursive: true, force: true });
+    fs.mkdirSync(OUT, { recursive: true });
+    log("ลบ public/ เก่าแล้วสร้างใหม่");
 }
 
 function writeDist(name, content) {
@@ -85,7 +111,9 @@ async function buildCss() {
 }
 
 async function buildHtml() {
-    const src = readSrc("index.html");
+    const src = readSrc("index.html")
+        .replace(/href=(["'])index\.css\1/g, 'href="style.css"')
+        .replace(/src=(["'])index\.js\1/g, 'src="app.js"');
     const out = await minifyHtml(src, {
         collapseWhitespace: true,
         removeComments: true,
@@ -97,12 +125,34 @@ async function buildHtml() {
     writeDist("index.html", out);
 }
 
+// คัดลอกไฟล์ที่ไม่ต้องแปลง (ไอคอน, manifest) ไป public/ — หาใน src/ ก่อน แล้วค่อยโฟลเดอร์หลัก
+function copyStatic() {
+    let n = 0;
+    for (const f of ["favicon.ico", "manifest.webmanifest"]) {
+        for (const dir of SRC_DIRS) {
+            const p = path.join(dir, f);
+            if (fs.existsSync(p)) { fs.copyFileSync(p, path.join(OUT, f)); n++; break; }
+        }
+    }
+    for (const dir of SRC_DIRS) {
+        const iconSrc = path.join(dir, "icons");
+        if (fs.existsSync(iconSrc)) {
+            fs.cpSync(iconSrc, path.join(OUT, "icons"), { recursive: true });
+            n++;
+            break;
+        }
+    }
+    log(`คัดลอกไฟล์ประกอบ (ไอคอน/manifest) ${n} รายการ`);
+}
+
 async function main() {
-    log("เริ่ม build จาก src/ → dist/ ...");
+    log("เริ่ม build → public/ ...");
+    cleanOut();
     await buildJs();
     await buildCss();
     await buildHtml();
-    log("เสร็จแล้ว เปิด dist/index.html เพื่อใช้งาน (ต้องมีไฟล์ dist/style.css และ dist/app.js อยู่โฟลเดอร์เดียวกัน)");
+    copyStatic();
+    log("เสร็จแล้ว เปิด public/index.html เพื่อใช้งาน (ต้องมีไฟล์ public/style.css และ public/app.js อยู่โฟลเดอร์เดียวกัน)");
 }
 
 main().catch(err => {
